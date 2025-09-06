@@ -19,7 +19,10 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3001'
+  ],
   credentials: true
 }));
 
@@ -107,8 +110,10 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('SIGINT received. Shutting down gracefully...');
-  mongoose.connection.close(() => {
+  mongoose.connection.close().then(() => {
     console.log('MongoDB connection closed.');
+    process.exit(0);
+  }).catch(() => {
     process.exit(0);
   });
 });
@@ -117,7 +122,7 @@ process.on('SIGINT', () => {
 app.listen(PORT, () => {
   console.log(`🚀 RupeeBridge Backend server running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`🌐 CORS enabled for: http://localhost:3000, http://localhost:3001`);
 });
 
 module.exports = app;

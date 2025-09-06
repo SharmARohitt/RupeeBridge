@@ -444,20 +444,61 @@ router.post('/transfer', authenticateWallet, validateTransaction, async (req, re
     }
     
     // Validate amount
-    if (amount < 1 || amount > user.limits.transactionLimit) {
+    if (amount < 1 || amount > 50000) {
       return res.status(400).json({
         success: false,
-        message: `Transfer amount must be between ₹1 and ₹${user.limits.transactionLimit.toLocaleString()}`
+        message: `Transfer amount must be between ₹1 and ₹50,000`
       });
     }
     
     // Check user's arbINR balance
     const balance = await contractService.getTokenBalance(user.walletAddress);
-    if (balance < amount) {
+    if (balance < amount + 1) { // Include 1 arbINR fee
       return res.status(400).json({
         success: false,
-        message: 'Insufficient arbINR balance'
+        message: 'Insufficient arbINR balance (including 1 arbINR transfer fee)'
       });
+    }
+    
+    // Check if MongoDB is connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      // Mock transfer for demo mode
+      const transactionId = 'TRF_' + Date.now().toString().slice(-8);
+      
+      // Execute transfer (mock blockchain operation)
+      const transferResult = await contractService.transferTokens(
+        user.walletAddress, 
+        recipientAddress, 
+        ethers.parseEther(amount.toString()),
+        transactionId
+      );
+      
+      if (transferResult.success) {
+        console.log(`💸 Mock transfer completed: ${transactionId} - ${amount} arbINR from ${user.walletAddress} to ${recipientAddress}`);
+        
+        return res.json({
+          success: true,
+          message: 'Transfer completed successfully',
+          data: {
+            transaction: {
+              id: transactionId,
+              amount,
+              recipient: recipientAddress,
+              status: 'completed',
+              completedAt: new Date(),
+              fee: 1,
+              txHash: transferResult.txHash
+            },
+            newBalance: await contractService.getTokenBalance(user.walletAddress)
+          }
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Transfer failed: ' + transferResult.error
+        });
+      }
     }
     
     // Find recipient user (if exists in our system)

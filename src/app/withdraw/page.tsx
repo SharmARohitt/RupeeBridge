@@ -86,9 +86,9 @@ export default function Withdraw() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-wallet-address': address || ''
         },
         body: JSON.stringify({
-          walletAddress: address,
           amount: parseFloat(amount),
           bankDetails: {
             accountNumber: bankAccount,
@@ -100,11 +100,12 @@ export default function Withdraw() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to initiate withdrawal');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to initiate withdrawal');
       }
 
       const data = await response.json();
-      setTransactionId(data.data.transaction.id);
+      setTransactionId(data.data?.transaction?.id || data.transactionId);
       setStep(2);
     } catch (error) {
       console.error('Withdrawal initiation failed:', error);

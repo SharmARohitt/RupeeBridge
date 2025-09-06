@@ -5,7 +5,8 @@ const User = require('../models/User');
 // Middleware to authenticate wallet-based requests
 const authenticateWallet = async (req, res, next) => {
   try {
-    const { walletAddress, signature, message } = req.headers;
+    const walletAddress = req.headers['x-wallet-address'];
+    const { signature, message } = req.headers;
 
     if (!walletAddress) {
       return res.status(401).json({

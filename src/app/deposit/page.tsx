@@ -58,20 +58,21 @@ export default function Deposit() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-wallet-address': address || ''
         },
         body: JSON.stringify({
-          walletAddress: address,
           amount: parseFloat(amount),
           type: 'bank_transfer'
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to initiate deposit');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to initiate deposit');
       }
 
       const data = await response.json();
-      setTransactionId(data.transactionId);
+      setTransactionId(data.data?.transaction?.id || data.transactionId);
       setStep(2);
     } catch (error) {
       console.error('Deposit initiation failed:', error);
@@ -89,10 +90,10 @@ export default function Deposit() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-wallet-address': address || ''
         },
         body: JSON.stringify({
-          transactionId,
-          walletAddress: address,
+          transactionId
         }),
       });
 
